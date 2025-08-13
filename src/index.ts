@@ -5,6 +5,7 @@ import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import * as dotenv from 'dotenv';
 import { loginToTelegram, listAllChats, filterChatsByPattern } from './telegram-client';
+import { getAllPages, findNewChats, addNewChatsToNotion } from './notion-client';
 
 // Load environment variables
 dotenv.config();
@@ -78,6 +79,47 @@ program
       console.log('Chat filtering complete!');
     } catch (error) {
       console.error('Filtering failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("get-names")
+  .description("Get all names from Notion database")
+  .action(async () => {
+    try {
+      const allNames = await getAllPages();
+      console.log(JSON.stringify(allNames, null, 2));
+    } catch (error) {
+      console.error('Name extraction failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("find-new")
+  .description("Find new Telegram chats that are not in Notion database")
+  .action(async () => {
+    try {
+      console.log('Starting new chat discovery...');
+      const newChats = await findNewChats();
+      console.log(`\n🎯 Found ${newChats.length} new chats to add to Notion`);
+      console.log('New chat discovery complete!');
+    } catch (error) {
+      console.error('New chat discovery failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("update-notion")
+  .description("Find new Telegram chats and add them to Notion database")
+  .action(async () => {
+    try {
+      console.log('Starting process to add new chats to Notion...');
+      await addNewChatsToNotion();
+    } catch (error) {
+      console.error('Add new chats process failed:', error);
       process.exit(1);
     }
   });
