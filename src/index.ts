@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import * as dotenv from 'dotenv';
-import { loginToTelegram, listAllFolders, scrapeFolder } from './telegram-client';
+import { loginToTelegram, listAllChats, filterChatsByPattern } from './telegram-client';
 
 // Load environment variables
 dotenv.config();
@@ -39,7 +39,7 @@ program
       // First ensure we're logged in
       await loginToTelegram();
       // Then list the chats
-      await listAllFolders();
+      await listAllChats();
       console.log('Chat discovery complete!');
     } catch (error) {
       console.error('Chat discovery failed:', error);
@@ -48,19 +48,36 @@ program
   });
 
 program
-  .command('scrape')
-  .description('Scrape chat information from a specific folder')
-  .argument('<folder>', 'Name of folder to scrape')
-  .action(async (folder: string) => {
+  .command('filter')
+  .description('Filter chats by name pattern (e.g., "envio" or "hemi")')
+  .argument('<pattern>', 'Pattern to search for in chat names')
+  .action(async (pattern: string) => {
     try {
-      console.log(`Starting folder scraping for: "${folder}"`);
+      console.log(`Starting chat filtering for pattern: "${pattern}"`);
       // First ensure we're logged in
       await loginToTelegram();
-      // Then scrape the specified folder
-      await scrapeFolder(folder);
-      console.log('Folder scraping complete!');
+      // Then filter chats by the pattern
+      const filteredChats = await filterChatsByPattern(pattern);
+      
+      if (filteredChats.length > 0) {
+        console.log('\n📋 Filtered Chat Results:');
+        filteredChats.forEach((chat, index) => {
+          console.log(`\n${index + 1}. 📱 ${chat.title}`);
+          console.log(`   Type: ${chat.type}`);
+          console.log(`   ID: ${chat.id}`);
+          if (chat.username) {
+            console.log(`   Username: @${chat.username}`);
+          }
+          console.log(`   Members: ${chat.memberCount}`);
+          console.log(`   Description: ${chat.description}`);
+        });
+        
+        console.log(`\n✅ Found ${filteredChats.length} chats matching "${pattern}"`);
+      }
+      
+      console.log('Chat filtering complete!');
     } catch (error) {
-      console.error('Scraping failed:', error);
+      console.error('Filtering failed:', error);
       process.exit(1);
     }
   });

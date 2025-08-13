@@ -130,7 +130,7 @@ export async function disconnect(): Promise<void> {
   }
 }
 
-export async function listAllFolders(): Promise<void> {
+export async function listAllChats(): Promise<void> {
   if (!client) {
     throw new Error('Not connected to Telegram. Please login first.');
   }
@@ -138,8 +138,8 @@ export async function listAllFolders(): Promise<void> {
   try {
     console.log('🔍 Fetching available folders...');
     
-    // Get all dialogs (chats) from the main folder
-    const dialogs = await client.getDialogs({ limit: 100 });
+    // Get all dialogs (chats) from the main folder - no limit
+    const dialogs = await client.getDialogs();
     
     console.log(`\n📁 Found ${dialogs.length} chats in main folder`);
     console.log('📋 Available chats by type:');
@@ -208,21 +208,21 @@ export async function listAllFolders(): Promise<void> {
   }
 }
 
-export async function scrapeFolder(folderName: string): Promise<void> {
+export async function filterChatsByPattern(pattern: string): Promise<any[]> {
   if (!client) {
     throw new Error('Not connected to Telegram. Please login first.');
   }
 
   try {
-    console.log(`🔍 Searching for folder: "${folderName}"`);
+    console.log(`🔍 Filtering chats by pattern: "${pattern}"`);
     
-    // First, let's check if there are any custom folders
-    // For now, we'll work with the main folder and search by chat names
-    // In the future, we can implement proper folder detection
+    // Get all dialogs (chats) - no limit
+    const dialogs = await client.getDialogs();
     
-    const dialogs = await client.getDialogs({ limit: 100 });
+    // Sanitize the pattern (lowercase, trim whitespace)
+    const sanitizedPattern = pattern.toLowerCase().trim();
     
-    // Search for chats that contain the folder name (case-insensitive)
+    // Filter chats that match the pattern
     const matchingChats = dialogs.filter(dialog => {
       const entity = dialog.entity;
       if (!entity) return false;
@@ -236,11 +236,12 @@ export async function scrapeFolder(folderName: string): Promise<void> {
         title = entity.username || '';
       }
       
-      return title.toLowerCase().includes(folderName.toLowerCase());
+      // Check if the sanitized title contains the sanitized pattern
+      return title.toLowerCase().includes(sanitizedPattern);
     });
     
     if (matchingChats.length === 0) {
-      console.log(`❌ No chats found matching folder name: "${folderName}"`);
+      console.log(`❌ No chats found matching pattern: "${pattern}"`);
       console.log('💡 Available chat names:');
       dialogs.slice(0, 10).forEach((dialog, index) => {
         const entity = dialog.entity;
@@ -259,16 +260,15 @@ export async function scrapeFolder(folderName: string): Promise<void> {
       if (dialogs.length > 10) {
         console.log(`  ... and ${dialogs.length - 10} more chats`);
       }
-      return;
+      return [];
     }
     
-    console.log(`✅ Found ${matchingChats.length} chats matching "${folderName}"`);
-    console.log('\n📋 Chat Details:');
+    console.log(`✅ Found ${matchingChats.length} chats matching "${pattern}"`);
     
-    // Get detailed information for each matching chat
-    for (const dialog of matchingChats) {
+    // Transform the data into a clean array format
+    const chatData = matchingChats.map(dialog => {
       const entity = dialog.entity;
-      if (!entity) continue;
+      if (!entity) return null;
       
       let title = '';
       let username = '';
@@ -301,18 +301,20 @@ export async function scrapeFolder(folderName: string): Promise<void> {
         // Some entities might not have these properties
       }
       
-      console.log(`\n📱 ${title}`);
-      console.log(`   Type: ${type}`);
-      console.log(`   ID: ${id}`);
-      if (username) {
-        console.log(`   Username: @${username}`);
-      }
-      console.log(`   Members: ${memberCount}`);
-      console.log(`   Description: ${description}`);
-    }
+      return {
+        title,
+        username,
+        id,
+        type,
+        memberCount,
+        description
+      };
+    }).filter(chat => chat !== null); // Remove any null entries
+    
+    return chatData;
     
   } catch (error) {
-    console.error('❌ Error scraping folder:', error);
+    console.error('❌ Error filtering chats:', error);
     throw error;
   }
 }
