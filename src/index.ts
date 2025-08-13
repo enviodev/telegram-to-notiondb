@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import * as dotenv from 'dotenv';
-import { loginToTelegram } from './telegram-client';
+import { loginToTelegram, listAllFolders, scrapeFolder } from './telegram-client';
 
 // Load environment variables
 dotenv.config();
@@ -31,14 +31,34 @@ program
   });
 
 program
+  .command('list')
+  .description('List all available chats and folders')
+  .action(async () => {
+    try {
+      console.log('Starting chat discovery...');
+      // First ensure we're logged in
+      await loginToTelegram();
+      // Then list the chats
+      await listAllFolders();
+      console.log('Chat discovery complete!');
+    } catch (error) {
+      console.error('Chat discovery failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
   .command('scrape')
   .description('Scrape chat information from a specific folder')
-  .argument('<folder>', 'Name of the folder to scrape')
+  .argument('<folder>', 'Name of folder to scrape')
   .action(async (folder: string) => {
     try {
-      console.log(`Scraping chats from folder: ${folder}`);
-      // TODO: Implement folder scraping functionality
-      console.log('Folder scraping not yet implemented');
+      console.log(`Starting folder scraping for: "${folder}"`);
+      // First ensure we're logged in
+      await loginToTelegram();
+      // Then scrape the specified folder
+      await scrapeFolder(folder);
+      console.log('Folder scraping complete!');
     } catch (error) {
       console.error('Scraping failed:', error);
       process.exit(1);

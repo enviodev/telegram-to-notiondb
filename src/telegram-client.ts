@@ -129,3 +129,190 @@ export async function disconnect(): Promise<void> {
     client = null;
   }
 }
+
+export async function listAllFolders(): Promise<void> {
+  if (!client) {
+    throw new Error('Not connected to Telegram. Please login first.');
+  }
+
+  try {
+    console.log('🔍 Fetching available folders...');
+    
+    // Get all dialogs (chats) from the main folder
+    const dialogs = await client.getDialogs({ limit: 100 });
+    
+    console.log(`\n📁 Found ${dialogs.length} chats in main folder`);
+    console.log('📋 Available chats by type:');
+    
+    // Group chats by type for better organization
+    const chatTypes = {
+      private: [] as any[],
+      group: [] as any[],
+      supergroup: [] as any[],
+      channel: [] as any[],
+      bot: [] as any[]
+    };
+
+    dialogs.forEach((dialog, index) => {
+      const entity = dialog.entity;
+      if (!entity) return;
+      
+      let title = '';
+      let username = '';
+      let id = entity.id;
+      
+      // Extract title and username based on entity type
+      if ('title' in entity) {
+        title = entity.title || `Chat ${index + 1}`;
+      } else if ('firstName' in entity) {
+        title = entity.firstName || entity.lastName || `User ${index + 1}`;
+        username = entity.username || '';
+      } else if ('username' in entity) {
+        title = entity.username || `Chat ${index + 1}`;
+        username = entity.username || '';
+      } else {
+        title = `Chat ${index + 1}`;
+      }
+      
+      // Categorize by entity type
+      const entityType = entity.className;
+      if (entityType === 'User') {
+        if ('bot' in entity && entity.bot) {
+          chatTypes.bot.push({ title, id, username });
+        } else {
+          chatTypes.private.push({ title, id, username });
+        }
+      } else if (entityType === 'Chat') {
+        chatTypes.group.push({ title, id, username });
+      } else if (entityType === 'Channel') {
+        chatTypes.channel.push({ title, id, username });
+      } else if (entityType && entityType.includes('Chat')) {
+        chatTypes.supergroup.push({ title, id, username });
+      }
+    });
+
+    // Display categorized results
+    Object.entries(chatTypes).forEach(([type, chats]) => {
+      if (chats.length > 0) {
+        console.log(`\n${type.toUpperCase()} (${chats.length}):`);
+        chats.forEach(chat => {
+          const usernameDisplay = chat.username ? ` (@${chat.username})` : '';
+          console.log(`  • ${chat.title}${usernameDisplay} [ID: ${chat.id}]`);
+        });
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching folders:', error);
+    throw error;
+  }
+}
+
+export async function scrapeFolder(folderName: string): Promise<void> {
+  if (!client) {
+    throw new Error('Not connected to Telegram. Please login first.');
+  }
+
+  try {
+    console.log(`🔍 Searching for folder: "${folderName}"`);
+    
+    // First, let's check if there are any custom folders
+    // For now, we'll work with the main folder and search by chat names
+    // In the future, we can implement proper folder detection
+    
+    const dialogs = await client.getDialogs({ limit: 100 });
+    
+    // Search for chats that contain the folder name (case-insensitive)
+    const matchingChats = dialogs.filter(dialog => {
+      const entity = dialog.entity;
+      if (!entity) return false;
+      
+      let title = '';
+      if ('title' in entity) {
+        title = entity.title || '';
+      } else if ('firstName' in entity) {
+        title = (entity.firstName || '') + ' ' + (entity.lastName || '');
+      } else if ('username' in entity) {
+        title = entity.username || '';
+      }
+      
+      return title.toLowerCase().includes(folderName.toLowerCase());
+    });
+    
+    if (matchingChats.length === 0) {
+      console.log(`❌ No chats found matching folder name: "${folderName}"`);
+      console.log('💡 Available chat names:');
+      dialogs.slice(0, 10).forEach((dialog, index) => {
+        const entity = dialog.entity;
+        if (entity) {
+          let title = '';
+          if ('title' in entity) {
+            title = entity.title || `Chat ${index + 1}`;
+          } else if ('firstName' in entity) {
+            title = (entity.firstName || '') + ' ' + (entity.lastName || '');
+          } else if ('username' in entity) {
+            title = entity.username || `Chat ${index + 1}`;
+          }
+          console.log(`  • ${title}`);
+        }
+      });
+      if (dialogs.length > 10) {
+        console.log(`  ... and ${dialogs.length - 10} more chats`);
+      }
+      return;
+    }
+    
+    console.log(`✅ Found ${matchingChats.length} chats matching "${folderName}"`);
+    console.log('\n📋 Chat Details:');
+    
+    // Get detailed information for each matching chat
+    for (const dialog of matchingChats) {
+      const entity = dialog.entity;
+      if (!entity) continue;
+      
+      let title = '';
+      let username = '';
+      let id = entity.id;
+      let type = entity.className || 'Unknown';
+      
+      // Extract title and username
+      if ('title' in entity) {
+        title = entity.title || 'Unknown Title';
+      } else if ('firstName' in entity) {
+        title = (entity.firstName || '') + ' ' + (entity.lastName || '').trim();
+        username = entity.username || '';
+      } else if ('username' in entity) {
+        title = entity.username || 'Unknown Username';
+        username = entity.username || '';
+      }
+      
+      // Get additional details if available
+      let memberCount = 'N/A';
+      let description = 'N/A';
+      
+      try {
+        if ('participantsCount' in entity && entity.participantsCount) {
+          memberCount = String(entity.participantsCount);
+        }
+        if ('about' in entity && entity.about) {
+          description = String(entity.about);
+        }
+      } catch (error) {
+        // Some entities might not have these properties
+      }
+      
+      console.log(`\n📱 ${title}`);
+      console.log(`   Type: ${type}`);
+      console.log(`   ID: ${id}`);
+      if (username) {
+        console.log(`   Username: @${username}`);
+      }
+      console.log(`   Members: ${memberCount}`);
+      console.log(`   Description: ${description}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error scraping folder:', error);
+    throw error;
+  }
+}
