@@ -5,11 +5,13 @@ A command-line tool to scrape chat information from Telegram folders.
 ## Setup
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Get Telegram API credentials:**
+
    - Go to [https://my.telegram.org/](https://my.telegram.org/)
    - Log in with your phone number
    - Go to "API development tools"
@@ -28,14 +30,8 @@ A command-line tool to scrape chat information from Telegram folders.
 
 ## Usage
 
-### Login to Telegram
 ```bash
-npm run dev -- login
-```
-
-### Scrape chats from a folder
-```bash
-npm run dev -- scrape "Folder Name"
+npm run dev -- update-notion
 ```
 
 ## Development
