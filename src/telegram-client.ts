@@ -72,9 +72,9 @@ export async function loginToTelegram(): Promise<void> {
   try {
     const { apiId, apiHash } = getApiCredentials();
     const sessionString = getSessionString();
-    
+
     console.log(sessionString ? 'Found existing session, attempting to restore...' : 'No existing session found, starting fresh login...');
-    
+
     // Create a new client instance
     client = new TelegramClient(
       new StringSession(sessionString || ''), // Use existing session or empty string for new session
@@ -102,7 +102,7 @@ export async function loginToTelegram(): Promise<void> {
     }
 
     console.log('Successfully connected to Telegram!');
-    
+
     // Save the session string for future use
     if (client.session) {
       const newSessionString = client.session.save();
@@ -130,103 +130,28 @@ export async function disconnect(): Promise<void> {
   }
 }
 
-export async function listAllChats(): Promise<void> {
-  if (!client) {
-    throw new Error('Not connected to Telegram. Please login first.');
-  }
-
-  try {
-    console.log('🔍 Fetching available folders...');
-    
-    // Get all dialogs (chats) from the main folder - no limit
-    const dialogs = await client.getDialogs();
-    
-    console.log(`\n📁 Found ${dialogs.length} chats in main folder`);
-    console.log('📋 Available chats by type:');
-    
-    // Group chats by type for better organization
-    const chatTypes = {
-      private: [] as any[],
-      group: [] as any[],
-      supergroup: [] as any[],
-      channel: [] as any[],
-      bot: [] as any[]
-    };
-
-    dialogs.forEach((dialog, index) => {
-      const entity = dialog.entity;
-      if (!entity) return;
-      
-      let title = '';
-      let username = '';
-      let id = entity.id;
-      
-      // Extract title and username based on entity type
-      if ('title' in entity) {
-        title = entity.title || `Chat ${index + 1}`;
-      } else if ('firstName' in entity) {
-        title = entity.firstName || entity.lastName || `User ${index + 1}`;
-        username = entity.username || '';
-      } else if ('username' in entity) {
-        title = entity.username || `Chat ${index + 1}`;
-        username = entity.username || '';
-      } else {
-        title = `Chat ${index + 1}`;
-      }
-      
-      // Categorize by entity type
-      const entityType = entity.className;
-      if (entityType === 'User') {
-        if ('bot' in entity && entity.bot) {
-          chatTypes.bot.push({ title, id, username });
-        } else {
-          chatTypes.private.push({ title, id, username });
-        }
-      } else if (entityType === 'Chat') {
-        chatTypes.group.push({ title, id, username });
-      } else if (entityType === 'Channel') {
-        chatTypes.channel.push({ title, id, username });
-      } else if (entityType && entityType.includes('Chat')) {
-        chatTypes.supergroup.push({ title, id, username });
-      }
-    });
-
-    // Display categorized results
-    Object.entries(chatTypes).forEach(([type, chats]) => {
-      if (chats.length > 0) {
-        console.log(`\n${type.toUpperCase()} (${chats.length}):`);
-        chats.forEach(chat => {
-          const usernameDisplay = chat.username ? ` (@${chat.username})` : '';
-          console.log(`  • ${chat.title}${usernameDisplay} [ID: ${chat.id}]`);
-        });
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching folders:', error);
-    throw error;
-  }
-}
-
 export async function filterChatsByPattern(pattern: string): Promise<any[]> {
+
+  await loginToTelegram();
+
   if (!client) {
     throw new Error('Not connected to Telegram. Please login first.');
   }
 
   try {
     console.log(`🔍 Filtering chats by pattern: "${pattern}"`);
-    
+
     // Get all dialogs (chats) - no limit
     const dialogs = await client.getDialogs();
-    
+
     // Sanitize the pattern (lowercase, trim whitespace)
     const sanitizedPattern = pattern.toLowerCase().trim();
-    
+
     // Filter chats that match the pattern
     const matchingChats = dialogs.filter(dialog => {
       const entity = dialog.entity;
       if (!entity) return false;
-      
+
       let title = '';
       if ('title' in entity) {
         title = entity.title || '';
@@ -235,11 +160,11 @@ export async function filterChatsByPattern(pattern: string): Promise<any[]> {
       } else if ('username' in entity) {
         title = entity.username || '';
       }
-      
+
       // Check if the sanitized title contains the sanitized pattern
       return title.toLowerCase().includes(sanitizedPattern);
     });
-    
+
     if (matchingChats.length === 0) {
       console.log(`❌ No chats found matching pattern: "${pattern}"`);
       console.log('💡 Available chat names:');
@@ -262,19 +187,19 @@ export async function filterChatsByPattern(pattern: string): Promise<any[]> {
       }
       return [];
     }
-    
+
     console.log(`✅ Found ${matchingChats.length} chats matching "${pattern}"`);
-    
+
     // Transform the data into a clean array format
     const chatData = matchingChats.map(dialog => {
       const entity = dialog.entity;
       if (!entity) return null;
-      
+
       let title = '';
       let username = '';
       let id = entity.id;
       let type = entity.className || 'Unknown';
-      
+
       // Extract title and username
       if ('title' in entity) {
         title = entity.title || 'Unknown Title';
@@ -285,11 +210,11 @@ export async function filterChatsByPattern(pattern: string): Promise<any[]> {
         title = entity.username || 'Unknown Username';
         username = entity.username || '';
       }
-      
+
       // Get additional details if available
       let memberCount = 'N/A';
       let description = 'N/A';
-      
+
       try {
         if ('participantsCount' in entity && entity.participantsCount) {
           memberCount = String(entity.participantsCount);
@@ -300,7 +225,7 @@ export async function filterChatsByPattern(pattern: string): Promise<any[]> {
       } catch (error) {
         // Some entities might not have these properties
       }
-      
+
       return {
         title,
         username,
@@ -310,9 +235,9 @@ export async function filterChatsByPattern(pattern: string): Promise<any[]> {
         description
       };
     }).filter(chat => chat !== null); // Remove any null entries
-    
+
     return chatData;
-    
+
   } catch (error) {
     console.error('❌ Error filtering chats:', error);
     throw error;
