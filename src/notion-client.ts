@@ -1,5 +1,5 @@
 import { Client } from '@notionhq/client';
-import { filterChatsByPattern } from './telegram-client';
+import { filterChatsByPattern, disconnect } from './telegram-client';
 
 // Notion API configuration
 function getNotionCredentials() {
@@ -96,102 +96,6 @@ export async function getAllPages(): Promise<string[]> {
     console.error('❌ Error fetching names from Notion:', error);
     throw error;
   }
-}
-
-// Mock Telegram chats data (based on your earlier extraction)
-const mockTelegramChats = [
-  {
-    title: "Envio <> Hemi",
-    type: "Channel",
-    id: 2446421169,
-    username: "",
-    memberCount: "9",
-    description: "N/A"
-  },
-  {
-    title: "Sonarplatform.io <> Envio",
-    type: "Chat",
-    id: 4956137359,
-    username: "",
-    memberCount: "8",
-    description: "N/A"
-  },
-  {
-    title: "OctoSwap <> Envio",
-    type: "Chat",
-    id: 4669052603,
-    username: "",
-    memberCount: "6",
-    description: "N/A"
-  },
-  {
-    title: "Avon <> Envio",
-    type: "Chat",
-    id: 4877568688,
-    username: "",
-    memberCount: "9",
-    description: "N/A"
-  },
-  {
-    title: "Envio <> Hints",
-    type: "Chat",
-    id: 4933800083,
-    username: "",
-    memberCount: "3",
-    description: "N/A"
-  },
-  {
-    title: "BitFi <> Envio",
-    type: "ChannelForbidden",
-    id: 2844855006,
-    username: "",
-    memberCount: "N/A",
-    description: "N/A"
-  },
-  {
-    title: "Zeno Lend <> Envio",
-    type: "ChannelForbidden",
-    id: 2744201836,
-    username: "",
-    memberCount: "N/A",
-    description: "N/A"
-  },
-  {
-    title: "Metrom <> Envio",
-    type: "ChannelForbidden",
-    id: 2701376527,
-    username: "",
-    memberCount: "N/A",
-    description: "N/A"
-  },
-  {
-    title: "Passdex <> Envio",
-    type: "ChannelForbidden",
-    id: 2668608433,
-    username: "",
-    memberCount: "N/A",
-    description: "N/A"
-  },
-  {
-    title: "Artura <> Envio",
-    type: "ChannelForbidden",
-    id: 2818433513,
-    username: "",
-    memberCount: "N/A",
-    description: "N/A"
-  },
-  {
-    title: "Kiki Finance <> Envio",
-    type: "ChannelForbidden",
-    id: 2829852904,
-    username: "",
-    memberCount: "N/A",
-    description: "N/A"
-  }
-];
-
-export function getMockTelegramChats() {
-  return mockTelegramChats;
 }
 
 export async function findNewChats(): Promise<any[]> {
@@ -350,5 +254,8 @@ export async function addNewChatsToNotion(): Promise<void> {
   } catch (error) {
     console.error('❌ Error in addNewChatsToNotion process:', error);
     throw error;
+  } finally {
+    // Always disconnect from Telegram when done
+    await disconnect();
   }
 }
