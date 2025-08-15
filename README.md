@@ -11,7 +11,7 @@ A CLI tool that automatically syncs Telegram chats to a Notion database. It find
 
 ## What it does
 
-1. **Scans Telegram**: Searches through all your Telegram chats for those containing a specific substring (currently configured for "Envio", update in line 108 of notion-client.ts)
+1. **Scans Telegram**: Searches through all your Telegram chats for those containing a specific substring (provided as a command line argument)
 2. **Compares with Notion**: Checks which of these chats already exist in your Notion database
 3. **Syncs new chats**: Automatically adds any new Telegram chats to your Notion database
 
@@ -59,14 +59,20 @@ A CLI tool that automatically syncs Telegram chats to a Notion database. It find
 
 ## Usage
 
-Run the sync command:
+Run the sync command with a substring to search for:
 ```bash
-npm run dev -- update-notion
+npm run dev -- update-notion "your-search-term"
+```
+
+Examples:
+```bash
+npm run dev -- update-notion "work"
+npm run dev -- update-notion "friday"
 ```
 
 This will:
 - Authenticate with Telegram (if needed)
-- Find all chats containing "your-substring" in the name (currently set to "Envio")
+- Find all chats containing the specified substring in the name (case-insensitive)
 - Check which ones are already in your Notion database
 - Add any new ones automatically
 - Automatically disconnect from Telegram when done
@@ -92,5 +98,5 @@ This will:
 - The first time you run the tool, you'll need to provide your phone number and verification code
 - If you have 2FA enabled, you'll also need to provide your password
 - After successful login, save the session string for future use
-- The tool is currently configured to search for chats containing "Envio" - you can modify this in the code if needed
+- The tool accepts a search substring as a command line argument
 - The tool automatically disconnects from Telegram when the sync is complete

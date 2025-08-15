@@ -98,14 +98,14 @@ export async function getAllPages(): Promise<string[]> {
   }
 }
 
-export async function findNewChats(): Promise<any[]> {
+export async function findNewChats(chat_substr: string): Promise<any[]> {
   try {
     // Get all names from Notion
     const notionNames = await getAllPages();
 
     // Get Telegram chats (using mock data for now)
     // const telegramChats = getMockTelegramChats();
-    const telegramChats = await filterChatsByPattern("Envio");
+    const telegramChats = await filterChatsByPattern(chat_substr);
 
     const newChats: any[] = [];
     const existingChats: any[] = [];
@@ -170,39 +170,6 @@ export async function addChatsToNotion(chats: any[]): Promise<void> {
               }
             ]
           }
-
-          // TODO: Add more properties here as needed
-          // Example properties you might want to add later:
-          // "Type": {
-          //   select: {
-          //     name: chat.type
-          //   }
-          // },
-          // "Telegram ID": {
-          //   number: chat.id
-          // },
-          // "Member Count": {
-          //   number: parseInt(chat.memberCount) || 0
-          // },
-          // "Description": {
-          //   rich_text: [
-          //     {
-          //       text: {
-          //         content: chat.description || "No description"
-          //       }
-          //     }
-          //   ]
-          // },
-          // "Status": {
-          //   select: {
-          //     name: "Active"
-          //   }
-          // },
-          // "Date Added": {
-          //   date: {
-          //     start: new Date().toISOString()
-          //   }
-          // }
         };
 
         // Create the new page in the database
@@ -236,10 +203,10 @@ export async function addChatsToNotion(chats: any[]): Promise<void> {
   }
 }
 
-export async function addNewChatsToNotion(): Promise<void> {
+export async function addNewChatsToNotion(chat_substr: string): Promise<void> {
   try {
     // First find new chats
-    const newChats = await findNewChats();
+    const newChats = await findNewChats(chat_substr);
 
     if (newChats.length === 0) {
       console.log('✨ No new chats found - everything is up to date!');
