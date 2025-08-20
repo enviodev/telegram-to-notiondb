@@ -79,11 +79,11 @@ This will:
 - Add any new ones automatically
 - Automatically disconnect from Telegram when done
 
-### Remove Duplicate Pages from Notion
+### Delete Duplicate Pages from Notion
 
 Clean up duplicate pages in your Notion database:
 ```bash
-npm run remove-duplicates
+npm run delete-duplicates
 ```
 
 **How duplicate removal works:**
@@ -111,7 +111,7 @@ npm run remove-duplicates
 
 ### Main Commands
 - **`npm run update-notion`** - Sync Telegram chats to Notion (interactive)
-- **`npm run remove-duplicates`** - Remove duplicate pages from Notion database
+- **`npm run delete-duplicates`** - Delete duplicate pages from Notion database
 
 ### Development Commands
 - **`npm run build`** - Build the project

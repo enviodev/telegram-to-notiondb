@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "update-notion": "npm run dev -- update-notion",
-    "remove-duplicates": "npm run dev -- remove-duplicates",
+    "delete-duplicates": "npm run dev -- delete-duplicates",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
