@@ -6,6 +6,8 @@
   "scripts": {
     "update-notion": "npm run dev -- update-notion",
     "delete-duplicates": "npm run dev -- delete-duplicates",
+
+    "restore-latest": "npm run dev -- restore-latest",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",

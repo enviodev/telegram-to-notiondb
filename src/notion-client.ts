@@ -258,6 +258,33 @@ export async function addNewChatsToNotion(chat_substr: string): Promise<void> {
 
 
 
+// File path for storing deleted pages
+const DELETED_PAGES_FILE = 'deleted-pages.json';
+
+// Helper functions for file storage
+const fs = require('fs');
+const path = require('path');
+
+const saveDeletedPages = (pages: Page[]): void => {
+  try {
+    fs.writeFileSync(DELETED_PAGES_FILE, JSON.stringify(pages, null, 2));
+  } catch (error) {
+    console.error('❌ Failed to save deleted pages to file:', error);
+  }
+};
+
+const loadDeletedPages = (): Page[] => {
+  try {
+    if (fs.existsSync(DELETED_PAGES_FILE)) {
+      const data = fs.readFileSync(DELETED_PAGES_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('❌ Failed to load deleted pages from file:', error);
+  }
+  return [];
+};
+
 //Delete duplicates funtions ------------------------------------------------------------
 
 
@@ -337,6 +364,9 @@ export const deleteDuplicates = async (duplicates: Page[]): Promise<boolean> => 
       
       console.log(`🗑️ Starting to archive ${duplicates.length} duplicate pages...`);
       
+      // Track pages for potential restoration
+      const deletedPages: Page[] = [];
+      
       // Process deletions sequentially to avoid rate limiting
       let numberDeleted = 0;
       for (let i = 0; i < duplicates.length; i++) {
@@ -348,8 +378,11 @@ export const deleteDuplicates = async (duplicates: Page[]): Promise<boolean> => 
                   archived: true
               });
               
-              console.log(`✅ [${i + 1}/${duplicates.length}] Archived: ${duplicate.name} (${duplicate.id})`);
+              console.log(`${" ".repeat(10)} - [${i + 1}/${duplicates.length}] Archived: ${duplicate.name} (${duplicate.id})`);
               numberDeleted++;
+              
+              // Track this page for potential restoration
+              deletedPages.push(duplicate);
 
               // Add small delay to avoid rate limiting (100ms between each deletion)
               if (i < duplicates.length - 1) {
@@ -361,11 +394,87 @@ export const deleteDuplicates = async (duplicates: Page[]): Promise<boolean> => 
           }
       }
 
+      // Save deleted pages to file for potential restoration
+      saveDeletedPages(deletedPages);
+      
       console.log(`\n🎉 Successfully removed ${numberDeleted}/${duplicates.length} duplicate pages.`);
+      console.log(`📝 These pages can be restored using 'npm run restore-latest'`);
       return true;
       
   } catch (error) {
       console.error(`❌ Error during duplicate deletion process:`, error);
       return false;
+  }
+};
+
+// Restore functions ------------------------------------------------------------
+
+
+
+export const restoreLatestRemoved = async (): Promise<number> => {
+  try {
+      // Load deleted pages from file
+      const deletedPages = loadDeletedPages();
+      
+      if (deletedPages.length === 0) {
+          console.log(`📝 No recently removed pages to restore. Run 'npm run delete-duplicates' first.`);
+          return 0;
+      }
+      
+      console.log(`🔄 Restoring ${deletedPages.length} recently removed pages...`);
+      
+      const client = initializeNotionClient();
+      let restoredCount = 0;
+      
+      for (let i = 0; i < deletedPages.length; i++) {
+          const page = deletedPages[i];
+          
+          try {
+              await client.pages.update({
+                  page_id: page.id,
+                  archived: false
+              });
+              
+              console.log(`✅ [${i + 1}/${deletedPages.length}] Restored: ${page.name}`);
+              restoredCount++;
+              
+              // Add delay to avoid rate limiting
+              if (i < deletedPages.length - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 100));
+              }
+          } catch (error) {
+              console.error(`❌ Failed to restore ${page.name}:`, error);
+          }
+      }
+      
+      console.log(`\n🎉 Successfully restored ${restoredCount}/${deletedPages.length} recently removed pages.`);
+      
+      // Remove successfully restored pages from the array
+      const successfullyRestoredIds = new Set();
+      for (let i = 0; i < restoredCount; i++) {
+          successfullyRestoredIds.add(deletedPages[i].id);
+      }
+      
+      const remainingPages = deletedPages.filter(page => !successfullyRestoredIds.has(page.id));
+      
+      if (remainingPages.length === 0) {
+          // All pages were restored, delete the file
+          try {
+              fs.unlinkSync(DELETED_PAGES_FILE);
+              console.log(`📝 Deleted pages file has been cleared.`);
+          } catch (error) {
+              console.log(`📝 Note: Could not delete the file, but restoration was successful.`);
+          }
+      } else {
+          // Some pages failed to restore, update the file with remaining ones
+          saveDeletedPages(remainingPages);
+          console.log(`📝 Updated file with ${remainingPages.length} pages that still need restoration.`);
+      }
+      
+      return restoredCount;
+      
+  } catch (error) {
+      console.error('❌ Error restoring latest removed pages:', error);
+      throw error;
   }
 };

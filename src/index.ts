@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import * as dotenv from 'dotenv';
-import { addNewChatsToNotion, getAllPages, getAllDuplicates, deleteDuplicates } from './notion-client';
+import { addNewChatsToNotion, getAllPages, getAllDuplicates, deleteDuplicates, restoreLatestRemoved } from './notion-client';
 
 // Load environment variables
 dotenv.config();
@@ -62,6 +62,20 @@ program
       await deleteDuplicates(duplicates);
     } catch (error) {
       console.error('Error deleting duplicates: ', error);
+      process.exit(1);
+    }
+  });
+
+
+
+program
+  .command("restore-latest")
+  .description("Restore the latest batch of pages removed by delete-duplicates.")
+  .action(async () => {
+    try {
+      await restoreLatestRemoved();
+    } catch (error) {
+      console.error('Error restoring latest removed pages: ', error);
       process.exit(1);
     }
   });

@@ -97,6 +97,23 @@ npm run delete-duplicates
 - Archives (soft deletes) the duplicate with less information
 - Processes pages sequentially to avoid rate limiting
 
+### Restore Archived Pages
+
+The tool provides a way to restore recently removed pages:
+
+#### **Restore Latest Removed Pages**
+```bash
+npm run restore-latest
+```
+This restores **only the pages from your most recent `delete-duplicates` run**. This is useful if you want to undo just the last batch of removals.
+
+**Note**: The `restore-latest` command only works if you've run `delete-duplicates` first. The tool automatically saves deleted pages to a local file (`deleted-pages.json`) which is included in gitignore.
+
+**File Management**: 
+- Successfully restored pages are automatically removed from the file
+- If some pages fail to restore, the file is updated with only the remaining pages
+- If all pages are restored successfully, the file is automatically deleted
+
 ## First-time Setup
 
 **IMPORTANT**: The first time you run this tool:
@@ -112,6 +129,7 @@ npm run delete-duplicates
 ### Main Commands
 - **`npm run update-notion`** - Sync Telegram chats to Notion (interactive)
 - **`npm run delete-duplicates`** - Delete duplicate pages from Notion database
+- **`npm run restore-latest`** - Restore only the latest batch of removed pages
 
 ### Development Commands
 - **`npm run build`** - Build the project
@@ -126,3 +144,4 @@ npm run delete-duplicates
 - The tool interactively prompts for search substrings
 - The tool automatically disconnects from Telegram when the sync is complete
 - Duplicate removal is safe and only archives pages (doesn't permanently delete them)
+- **Restore functionality**: You can restore recently removed pages using the restore-latest command

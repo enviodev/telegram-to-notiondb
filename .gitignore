@@ -99,3 +99,6 @@ Thumbs.db
 # Telegram session files (if any)
 *.session
 *.session-journal
+
+# Local data files
+deleted-pages.json
