@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import * as dotenv from 'dotenv';
-import { addNewChatsToNotion } from './notion-client';
+import { addNewChatsToNotion, getAllPages, getAllDuplicates, deleteDuplicates } from './notion-client';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +25,20 @@ program
       await addNewChatsToNotion(chat_substr);
     } catch (error) {
       console.error('Add new chats process failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("delete-duplicates")
+  .description("Delete duplicate pages from Notion database.")
+  .action(async () => {
+    try {
+      const allPages = await getAllPages();
+      const duplicates = getAllDuplicates(allPages);
+      await deleteDuplicates(duplicates);
+    } catch (error) {
+      console.error('Error deleting duplicates: ', error);
       process.exit(1);
     }
   });
