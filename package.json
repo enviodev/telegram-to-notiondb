@@ -4,6 +4,8 @@
   "description": "CLI tool to scrape Telegram chat information from folders",
   "main": "dist/index.js",
   "scripts": {
+    "update-notion": "npm run dev -- update-notion",
+    "remove-duplicates": "npm run dev -- remove-duplicates",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",

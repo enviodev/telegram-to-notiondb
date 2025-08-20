@@ -17,9 +17,32 @@ program
 program
   .command("update-notion")
   .description("Find new Telegram chats and add them to Notion database")
-  .argument('<chat_substr>', 'Substring to search for in telegram chat names (case insensitive)')
-  .action(async (chat_substr) => {
+  .action(async () => {
     try {
+      // Import readline for user input
+      const readline = require('readline');
+      
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+      
+      // Prompt user for substring (keep asking until valid input)
+      let chat_substr = '';
+      while (!chat_substr) {
+        chat_substr = await new Promise<string>((resolve) => {
+          rl.question('Enter substring to filter telegram chats by: ', (answer: string) => {
+            resolve(answer.trim());
+          });
+        });
+        
+        if (!chat_substr) {
+          console.log('❌ Please enter a valid substring to search for.');
+        }
+      }
+      
+      rl.close();
+      
       console.log('⚠️  WARNING: Use this tool at your own risk! The author\'s Telegram account was frozen after using this tool.');
       console.log('Starting process to add new chats to Notion...');
       await addNewChatsToNotion(chat_substr);

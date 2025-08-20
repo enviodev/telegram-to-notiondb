@@ -11,9 +11,10 @@ A CLI tool that automatically syncs Telegram chats to a Notion database. It find
 
 ## What it does
 
-1. **Scans Telegram**: Searches through all your Telegram chats for those containing a specific substring (provided as a command line argument)
+1. **Scans Telegram**: Searches through all your Telegram chats for those containing a specific substring (interactively prompted)
 2. **Compares with Notion**: Checks which of these chats already exist in your Notion database
 3. **Syncs new chats**: Automatically adds any new Telegram chats to your Notion database
+4. **Removes duplicates**: Can clean up duplicate pages in your Notion database, keeping the one with more information
 
 ## Setup
 
@@ -59,15 +60,16 @@ A CLI tool that automatically syncs Telegram chats to a Notion database. It find
 
 ## Usage
 
-Run the sync command with a substring to search for:
+### Sync Telegram Chats to Notion
+
+Run the sync command (no arguments needed):
 ```bash
-npm run dev -- update-notion "your-search-term"
+npm run update-notion
 ```
 
-Examples:
-```bash
-npm run dev -- update-notion "work"
-npm run dev -- update-notion "friday"
+The tool will interactively prompt you for the search substring:
+```
+Enter substring to filter telegram chats by: python
 ```
 
 This will:
@@ -76,6 +78,24 @@ This will:
 - Check which ones are already in your Notion database
 - Add any new ones automatically
 - Automatically disconnect from Telegram when done
+
+### Remove Duplicate Pages from Notion
+
+Clean up duplicate pages in your Notion database:
+```bash
+npm run remove-duplicates
+```
+
+**How duplicate removal works:**
+- Finds pages with the same name in your Notion database
+- Compares them based on:
+  - Number of filled properties (more is better)
+  - Owner information (pages with owners are preferred)
+  - Status (pages with "New Leads" status are preferred)
+  - Network information (more networks is better)
+- **Keeps the page with more information**
+- Archives (soft deletes) the duplicate with less information
+- Processes pages sequentially to avoid rate limiting
 
 ## First-time Setup
 
@@ -87,16 +107,22 @@ This will:
 4. **Add it to your `.env` file** as `TELEGRAM_SESSION_STRING=your_session_string_here`
 5. **Future runs will use this session** and won't require re-authentication
 
-## Development
+## Available Commands
 
-- Build: `npm run build`
-- Run in development mode: `npm run dev`
-- Watch for changes: `npm run watch`
+### Main Commands
+- **`npm run update-notion`** - Sync Telegram chats to Notion (interactive)
+- **`npm run remove-duplicates`** - Remove duplicate pages from Notion database
+
+### Development Commands
+- **`npm run build`** - Build the project
+- **`npm run dev`** - Run in development mode
+- **`npm run watch`** - Watch for changes
 
 ## Notes
 
 - The first time you run the tool, you'll need to provide your phone number and verification code
 - If you have 2FA enabled, you'll also need to provide your password
 - After successful login, save the session string for future use
-- The tool accepts a search substring as a command line argument
+- The tool interactively prompts for search substrings
 - The tool automatically disconnects from Telegram when the sync is complete
+- Duplicate removal is safe and only archives pages (doesn't permanently delete them)
